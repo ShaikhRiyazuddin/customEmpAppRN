@@ -3,6 +3,7 @@ import { View, Text, ActivityIndicator, FlatList, TouchableOpacity, StyleSheet, 
 import { useNavigation } from '@react-navigation/native';
 import { fetchEmployees } from '../services/apiService';
 import ListItem from '../components/ListItem';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const ListOfEmployee = () => {
@@ -14,12 +15,27 @@ const ListOfEmployee = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      let cachedData;
       try {
+         // Check for cached data exists
+         const cachedDataJSON = await AsyncStorage.getItem('employees');
+         if (cachedDataJSON) {
+           cachedData = JSON.parse(cachedDataJSON);
+           setData(cachedData);
+           setFilteredData(cachedData);
+         }
         const employees = await fetchEmployees();
         setData(employees);
         setFilteredData(response.data.data);
+        // refresh 
+        await AsyncStorage.setItem('employees', JSON.stringify(newData));
       } catch (error) {
         console.error('Error fetching data:', error);
+        //failed use catched data
+        if (cachedData) {
+          setData(cachedData);
+          setFilteredData(cachedData);
+        }
       } finally {
         setLoading(false);
       }
@@ -37,8 +53,10 @@ const ListOfEmployee = () => {
       setFilteredData(data);
     } else {
       const filtered = data.filter((item) =>
-        item.employee_name.toLowerCase().includes(text.toLowerCase())
+        item.employee_name.toLowerCase().includes(text.toLowerCase()) ||
+        item.employee_salary.toLowerCase().includes(text.toLowerCase())
       );
+      setFilteredData(filtered);
     }
   };
 
@@ -72,7 +90,7 @@ const ListOfEmployee = () => {
       <Text style={styles.title}>Employee List</Text>
       <TextInput
         style={styles.searchInput}
-        placeholder="Search by name"
+        placeholder="Search for employee"
         onChangeText={handleSearch}
         value={searchQuery}
       />
