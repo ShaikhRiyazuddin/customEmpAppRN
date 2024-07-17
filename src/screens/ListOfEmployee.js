@@ -66,7 +66,10 @@ const ListOfEmployee = () => {
       if (response.data.success) {
         const updatedData = data.filter(item => item.id !== employeeId);
         setData(updatedData);
-        setFilteredData(updatedData);
+        setFilteredData(updatedData); 
+          // refresh cached data
+        await AsyncStorage.setItem('employees', JSON.stringify(updatedData));
+
         Alert.alert('Success', 'Employee deleted successfully.');
       } else {
         Alert.alert('Error', 'Failed to delete employee.');
